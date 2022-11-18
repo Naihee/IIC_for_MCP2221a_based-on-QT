@@ -28,7 +28,7 @@ public:
     short           result = 0;                //函数中间操作数，返回每次操作的结果
     unsigned int            DIC = 0;
     unsigned char   SlaveAddress = 0x58;   //当前试验地址： 101 1000(B0)=88
-    unsigned char   I2C_Read_Data[15];     //接收数据数组
+    unsigned char   I2C_Read_Data[25];     //接收数据数组
     unsigned short  Linear_Data;           //Linear格式数据
     bool            MCP2221_Status = 0;    //BOOL变量：=0代表设备未打开，=1代表设备已打开
     bool            MCP2221_While = 0;     //轮询变量

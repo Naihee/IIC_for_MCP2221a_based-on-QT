@@ -142,10 +142,12 @@ void MainWindow::getDeviceInfo()
     QString strSerial ;
     //更新设备型号
     errorCode = mcp2221a->SmbusBlockRead(0x9A,10);
-    if(errorCode){
+    //    qDebug()<<errorCode;
+    if(errorCode <= 0){
         ui->statePlainTextEdit->appendPlainText("配置信息更新失败！失败代码：>> "+QString::number(errorCode,10));
     }else{
-        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
+        //        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
+        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), errorCode);
         strSerial = QString::fromStdString(temp.toStdString());
 
         ui->deviceInfoTableWidget->setItem(0,1,new QTableWidgetItem(strSerial));
@@ -155,23 +157,23 @@ void MainWindow::getDeviceInfo()
 
     //更新生产日期
     errorCode = mcp2221a->SmbusBlockRead(0x9D,3);
-    if(errorCode){
+    if(errorCode <=0 ){
         ui->statePlainTextEdit->appendPlainText("配置信息更新失败！失败代码：>> "+QString::number(errorCode,10));
     }else{
-        hexStr = toHexStr(QByteArray((const char*)mcp2221a->I2C_Read_Data));
+        hexStr = toHexStr(QByteArray((const char*)mcp2221a->I2C_Read_Data),errorCode);
         //        qDebug()<<hexStr;
 
-        ui->deviceInfoTableWidget->setItem(1,1,new QTableWidgetItem(hexStr.mid(0,8)));
+        ui->deviceInfoTableWidget->setItem(1,1,new QTableWidgetItem(hexStr));
         ui->deviceInfoTableWidget->item(1,1)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
         mcp2221a->Clean_I2C_Read_Data();
     }
 
     //更新设备ID
     errorCode = mcp2221a->SmbusBlockRead(0x99,3);
-    if(errorCode){
+    if( errorCode<=0 ){
         ui->statePlainTextEdit->appendPlainText("配置信息更新失败！失败代码：>> "+QString::number(errorCode,10));
     }else{
-        QByteArray temp2((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
+        QByteArray temp2((const char*)(mcp2221a->I2C_Read_Data),errorCode);
         strSerial = QString::fromStdString(temp2.toStdString());
 
         ui->deviceInfoTableWidget->setItem(2,1,new QTableWidgetItem(strSerial));
@@ -181,10 +183,10 @@ void MainWindow::getDeviceInfo()
 
     //更新设生产产地
     errorCode = mcp2221a->SmbusBlockRead(0x9C,14);
-    if(errorCode){
+    if(errorCode <=0 ){
         ui->statePlainTextEdit->appendPlainText("配置信息更新失败！失败代码：>> "+QString::number(errorCode,10));
     }else{
-        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
+        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data),errorCode);
         strSerial = QString::fromStdString(temp.toStdString());
 
         ui->deviceInfoTableWidget->setItem(3,1,new QTableWidgetItem(strSerial));
@@ -194,10 +196,10 @@ void MainWindow::getDeviceInfo()
 
     //更新芯片ID
     errorCode = mcp2221a->SmbusBlockRead(0xAD,7);
-    if(errorCode){
+    if(errorCode <=0 ){
         ui->statePlainTextEdit->appendPlainText("配置信息更新失败！失败代码：>> "+QString::number(errorCode,10));
     }else{
-        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
+        QByteArray temp((const char*)(mcp2221a->I2C_Read_Data),errorCode);
         strSerial = QString::fromStdString(temp.toStdString());
 
         ui->deviceInfoTableWidget->setItem(4,1,new QTableWidgetItem(strSerial));
@@ -332,7 +334,7 @@ void MainWindow::checkByteCountPushButtonClicked()
                                                   mcp2221a->I2C_Read_Data);
         if(mcp2221a->result == 0)
         {
-            ui->BlockReadCountlineEdit->setText(QString::number(i));
+            ui->BlockReadCountlineEdit->setText(QString::number(i,16).toUpper());
         }
     }
 
@@ -346,8 +348,8 @@ void MainWindow::timerTimeOut()
         mcp2221a->Read_Power();
         mcp2221a->Read_FanSpeed();
 
-//        ui->workDataTableWidget->setItem(1,1,new QTableWidgetItem(QString::number(mcp2221a->getVinI(), 'f', 2)));
-//        ui->workDataTableWidget->setItem(2,1,new QTableWidgetItem(QString::number(mcp2221a->getVinV(), 'f', 2)));
+        //        ui->workDataTableWidget->setItem(1,1,new QTableWidgetItem(QString::number(mcp2221a->getVinI(), 'f', 2)));
+        //        ui->workDataTableWidget->setItem(2,1,new QTableWidgetItem(QString::number(mcp2221a->getVinV(), 'f', 2)));
         ui->workDataTableWidget->setItem(3,1,new QTableWidgetItem(QString::number(mcp2221a->getOutputPower(), 'f', 2)));
         ui->workDataTableWidget->setItem(4,1,new QTableWidgetItem(QString::number(mcp2221a->getOutputCurrent(), 'f', 2)));
         ui->workDataTableWidget->setItem(5,1,new QTableWidgetItem(QString::number(mcp2221a->getOutputVoltage(), 'f', 2)));
@@ -426,24 +428,25 @@ void MainWindow::on_SMbusPushButton_clicked()
         case 4:     //Block Read
 
             commend = ui->BlockReadlineEdit->text().toInt(&ok,16);
-            //            byteCount = ui->BlockReadCountlineEdit->text().toInt(&ok,16);
-            byteCount = ui->BlockReadCountlineEdit->text().toInt(&ok);
+            byteCount = ui->BlockReadCountlineEdit->text().toInt(&ok,16);
             errorCode = mcp2221a->SmbusBlockRead(commend,byteCount);
-            if(errorCode){
+            qDebug()<<errorCode;
+            if( errorCode <= 0 ){
                 ui->statePlainTextEdit->appendPlainText("失败！失败代码：>> "+QString::number(errorCode,10));
             }else{
 
                 hexStr = toHexStr(QByteArray((const char*)mcp2221a->I2C_Read_Data));
-                if(hexStr == "00 00 00 00 00 00 00 00 00 00") //有问题（保留）
-                {
-                    QByteArray temp((const char*)(mcp2221a->I2C_Read_Data), sizeof(mcp2221a->I2C_Read_Data));
-                    QString strSerial = QString::fromStdString(temp.toStdString());
-                    ui->statePlainTextEdit->appendPlainText(nowTime1.toString("hh:mm:ss")+">>"+strSerial);
-                }else
-                {
-                    ui->statePlainTextEdit->appendPlainText(nowTime1.toString("hh:mm:ss")+">>"+hexStr);
-                    mcp2221a->Clean_I2C_Read_Data();
-                }
+                //                    QByteArray temp((const char*)(mcp2221a->I2C_Read_Data));
+                //                    QString strSerial = QString::fromStdString(temp.toStdString());
+                //                    ui->statePlainTextEdit->appendPlainText(nowTime1.toString("hh:mm:ss")+">>"+strSerial);
+                ui->statePlainTextEdit->appendPlainText(nowTime1.toString("hh:mm:ss")+">>"
+                                                        +"命令：0x" + ui->BlockReadlineEdit->text().toUpper()
+                                                        +">>"
+                                                        +"("+ui->BlockReadCountlineEdit->text().toUpper()+") "
+                                                        +
+                                                        hexStr);
+                mcp2221a->Clean_I2C_Read_Data();
+
             }
 
             break;

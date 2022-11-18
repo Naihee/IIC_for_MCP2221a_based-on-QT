@@ -313,11 +313,26 @@ int MCP2221A::SmbusBlockWrite(unsigned char command, unsigned char byteCount, un
 int MCP2221A::SmbusBlockRead(unsigned char command, unsigned char byteCount)
 {
 
-    result = Mcp2221_SmbusBlockRead(mcpHandle, SlaveAddress, 1, 0,command,byteCount,I2C_Read_Data);
-//    unsigned char *com = &command;
-//    result = Mcp2221_I2cWrite(mcpHandle,1,SlaveAddress,1,com);
-//    result = Mcp2221_I2cRead(mcpHandle,byteCount,SlaveAddress,1,I2C_Read_Data);
-    return result;
+//    result = Mcp2221_SmbusBlockRead(mcpHandle, SlaveAddress, 1, 0,command,byteCount,I2C_Read_Data);
+    unsigned char *com = &command;
+    unsigned char num = 0;
+    result = Mcp2221_I2cWrite(mcpHandle,1,SlaveAddress,1,com);
+    if(result == 0)
+    {
+        result = Mcp2221_I2cRead(mcpHandle,byteCount+1,SlaveAddress,1,I2C_Read_Data);
+        if(result == 0)
+        {
+            num = I2C_Read_Data[0];
+            for(int i=0 ; i < sizeof(I2C_Read_Data) ;i++)
+            {
+                I2C_Read_Data[i] = I2C_Read_Data[i+1];
+            }
+        }
+    }
+
+
+
+    return (result==0)?(num):(result);
 }
 
 float MCP2221A::getEnvirTemperature()
